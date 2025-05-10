@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
         x_out = model(x, pos, edge_index, batch_idx)
 
-        print(x_out.shape)
-        print(batch['label'].shape)
+        print(x_out.shape, x_out.dtype)
+        print(batch['label'].shape, batch['label'].dtype)
         loss = criterion(x_out, batch['label'].cuda())
 
         y_prediction = torch.argmax(x_out, dim=-1)

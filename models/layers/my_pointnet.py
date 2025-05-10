@@ -288,5 +288,5 @@ class MyPointNetConv(nn.Module):
             self.qlinear.bias.copy_(quantized_bias)
     
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}(local_nn={self.local_nn}, '
+        return (f'{self.__class__.__name__}(local_nn={self.linear}, '
                 f'global_nn={self.global_nn}), num_bits={self.num_bits}')

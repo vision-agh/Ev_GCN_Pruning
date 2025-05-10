@@ -62,7 +62,7 @@ class NCars(L.LightningDataModule):
             offset += data['x'].shape[0]
         edge_index = torch.cat(edge_index, dim=0)
 
-        label = torch.tensor([data['label'] for data in data_list])
+        label = torch.tensor([data['label'] for data in data_list], dtype=torch.long)
 
         batch = torch.cat([torch.full((data['x'].shape[0],), i) for i, data in enumerate(data_list)], dim=0)
         batch = batch.long()
