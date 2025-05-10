@@ -27,14 +27,9 @@ if __name__ == '__main__':
         x = batch['x'].cuda()
         pos = batch['pos'].cuda()
         edge_index = batch['edge_index'].cuda()
-        # mask = edge_index[:, 0] != edge_index[:, 1]
-        # edge_index = edge_index[mask, :]
-        # edge_index = torch.unique(edge_index, dim=0)
-        # edge_index = torch.cat((edge_index, torch.arange(x.shape[0], device=edge_index.device).unsqueeze(1).expand(-1, 2)), dim=0)
 
         batch = batch['batch'].cuda()
 
-        print(x.shape)
         x = layer1(x, pos, edge_index)
         x = layer2(x, pos, edge_index)
 
@@ -43,7 +38,6 @@ if __name__ == '__main__':
         x = layer3(x, pos, edge_index)
         x = layer4(x, pos, edge_index)
 
-        print(x.shape)
 
 
     print('done')
