@@ -6,6 +6,7 @@ from data.ncars import NCars
 
 from models.layers.my_pointnet import MyPointNetConv
 from models.layers.my_max_pool import MyGraphPooling
+from models.layers.my_pool_out import MyGraphPoolOut
 
 import torch
 
@@ -18,10 +19,13 @@ if __name__ == '__main__':
     lm.setup()
 
     layer1 = MyPointNetConv(4, 16, False, 8, True).cuda()
+    pool1 = MyGraphPooling(4, max_dimension=128)
     layer2 = MyPointNetConv(19, 32, False, 8, False).cuda()
-    pool = MyGraphPooling(16, max_dimension=128)
     layer3 = MyPointNetConv(35, 32, False, 8, False).cuda()
+    pool2 = MyGraphPooling(2, max_dimension=32)
     layer4 = MyPointNetConv(35, 64, False, 8, False).cuda()
+    layer5 = MyPointNetConv(67, 64, False, 8, False).cuda()
+    pool_out = MyGraphPoolOut(4, max_dimension=16)
 
     for i, batch in enumerate(lm.train_dataloader()):
         x = batch['x'].cuda()
@@ -31,12 +35,15 @@ if __name__ == '__main__':
         batch = batch['batch'].cuda()
 
         x = layer1(x, pos, edge_index)
+        x, pos, edge_index, batch = pool1(x, pos, edge_index, batch)
         x = layer2(x, pos, edge_index)
-
-        x, pos, edge_index, batch = pool(x, pos, edge_index, batch)
-
         x = layer3(x, pos, edge_index)
+        x, pos, edge_index, batch = pool2(x, pos, edge_index, batch)
         x = layer4(x, pos, edge_index)
+        x = layer5(x, pos, edge_index)
+        x = pool_out(x, pos, batch)
+
+        print(x.shape)
 
 
 

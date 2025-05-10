@@ -7,8 +7,6 @@ import lightning as L
 from torch.utils.data import DataLoader
 from data.base.event_ds import EventDS
 
-device = torch.device(torch.cuda.current_device()) if torch.cuda.is_available() else torch.device('cpu')
-
 class NCars(L.LightningDataModule):
     def __init__(self, cfg):
         super().__init__()
@@ -66,7 +64,7 @@ class NCars(L.LightningDataModule):
 
         label = torch.tensor([data['label'] for data in data_list])
 
-        batch = torch.cat([torch.full((data['x'].shape[0],), i, device=device) for i, data in enumerate(data_list)], dim=0)
+        batch = torch.cat([torch.full((data['x'].shape[0],), i) for i, data in enumerate(data_list)], dim=0)
         batch = batch.long()
 
         return {
