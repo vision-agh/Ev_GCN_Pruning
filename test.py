@@ -4,9 +4,9 @@ from omegaconf import OmegaConf
 
 from data.ncars import NCars
 
-from models.layers.my_pointnet import MyPointNetConv
-from models.layers.my_max_pool import MyGraphPooling
-from models.layers.my_pool_out import MyGraphPoolOut
+from models.model import MyModel
+
+from torchmetrics import Accuracy
 
 import torch
 
@@ -18,32 +18,31 @@ if __name__ == '__main__':
     lm = NCars(cfg)
     lm.setup()
 
-    layer1 = MyPointNetConv(4, 16, False, 8, True).cuda()
-    pool1 = MyGraphPooling(4, max_dimension=128)
-    layer2 = MyPointNetConv(19, 32, False, 8, False).cuda()
-    layer3 = MyPointNetConv(35, 32, False, 8, False).cuda()
-    pool2 = MyGraphPooling(2, max_dimension=32)
-    layer4 = MyPointNetConv(35, 64, False, 8, False).cuda()
-    layer5 = MyPointNetConv(67, 64, False, 8, False).cuda()
-    pool_out = MyGraphPoolOut(4, max_dimension=16)
+    model = MyModel(cfg).cuda().train()
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = torch.nn.CrossEntropyLoss()
+    accuracy = Accuracy(task="multiclass", num_classes=2)
 
     for i, batch in enumerate(lm.train_dataloader()):
         x = batch['x'].cuda()
         pos = batch['pos'].cuda()
         edge_index = batch['edge_index'].cuda()
+        batch_idx = batch['batch'].cuda()
 
-        batch = batch['batch'].cuda()
+        x_out = model(x, pos, edge_index, batch_idx)
 
-        x = layer1(x, pos, edge_index)
-        x, pos, edge_index, batch = pool1(x, pos, edge_index, batch)
-        x = layer2(x, pos, edge_index)
-        x = layer3(x, pos, edge_index)
-        x, pos, edge_index, batch = pool2(x, pos, edge_index, batch)
-        x = layer4(x, pos, edge_index)
-        x = layer5(x, pos, edge_index)
-        x = pool_out(x, pos, batch)
+        print(x_out.shape)
+        print(batch['label'].shape)
+        loss = criterion(x_out, batch['label'].cuda())
 
-        print(x.shape)
+        y_prediction = torch.argmax(x_out, dim=-1)
+        acc = accuracy(preds=y_prediction.cpu(), target=batch['label'].cpu())
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        print(f"Batch {i}: Loss: {loss.item()}, Accuracy: {acc.item()}")
 
 
 

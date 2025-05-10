@@ -197,7 +197,7 @@ class MyPointNetConv(nn.Module):
 
         msg = msg - self.observer_input.zero_point
         msg = self.qlinear(msg)
-        msg = (msg * self.m + self.observer_output.zero_point).round() 
+        msg = (msg * self.m).round() + self.observer_output.zero_point
         msg = torch.clamp(msg, 0, 2**self.num_bits - 1)
 
         '''Update graph features.'''

@@ -21,7 +21,7 @@ class MyGraphPoolOut(Module):
         self.register_buffer('quantize_mode', torch.tensor(False, requires_grad=False))
 
         '''Initialize quantization observers for input, weight and output tensors.'''
-        self.observer_in = Observer(num_bits=num_bits)
+        self.observer_input = Observer(num_bits=num_bits)
         self.num_bits = num_bits
 
     def forward(self,
@@ -85,13 +85,17 @@ class MyGraphPoolOut(Module):
         output_x = output_x.flatten(start_dim=1)
         return output_x
     
-    def freeze(self,
-               observer_in: Observer = None,
-               observer_out: Observer = None):
+    def calibrate(self):
+        self.calib_mode.fill_(True)
+
+    def quantize(self,
+               observer_input: Observer = None,
+               observer_output: Observer = None):
         
+        self.quantize_mode.fill_(True)
         '''Freeze model - quantize weights/bias and calculate scales'''
-        if observer_in is not None:
-            self.observer_in = observer_in
+        if observer_input is not None:
+            self.observer_input = observer_input
 
     def forward_quant(self, 
                 x: torch.Tensor, 
@@ -107,7 +111,7 @@ class MyGraphPoolOut(Module):
         uniq_qpos = unique_keys[:, 1:]
 
         pooled_x = torch.zeros((uniq_qpos.size(0), x.size(1)), dtype=x.dtype, device=x.device)
-        output_x = torch.zeros((max_batch, self.grid_size ** 3, x.size(1)), dtype=x.dtype, device=x.device) + self.observer_in.zero_point
+        output_x = torch.zeros((max_batch, self.grid_size ** 3, x.size(1)), dtype=x.dtype, device=x.device) + self.observer_input.zero_point
 
         pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False) #TODO Change to True
         indices_1d = uniq_qpos[:, 0] * self.grid_size ** 2 + uniq_qpos[:, 1] * self.grid_size + uniq_qpos[:, 2]

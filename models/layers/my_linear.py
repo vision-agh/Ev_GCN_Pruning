@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 from models.quantisation.observer import Observer, FakeQuantize, quantize_tensor, dequantize_tensor
 
-class QuantLinear(nn.Module):
+class MyLinear(nn.Module):
     '''Quantized version of Linear layer.'''
     def __init__(self, 
                  input_dim: int = 1, 
@@ -18,115 +18,140 @@ class QuantLinear(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.bias = bias
+        self.num_bits = num_bits
+        
+        self.num_bits_obs = 32
 
         self.linear = nn.Linear(input_dim, output_dim, bias=bias)
 
-        self.num_bits = num_bits
+        self.reset_parameters()
+
+        '''Modes for calibration and quantization'''
+        self.register_buffer('calib_mode', torch.tensor(False, requires_grad=False))
+        self.register_buffer('quantize_mode', torch.tensor(False, requires_grad=False))
 
         '''Initialize quantization observers for input, weight and output tensors.'''
-        self.observer_in = Observer(num_bits=num_bits)
-        self.observer_w = Observer(num_bits=num_bits)
-        self.observer_out = Observer(num_bits=num_bits)
-        self.register_buffer('m', torch.tensor([-1], requires_grad=False))
-        
-        '''Initialize quantized version of scales.'''
-        self.register_buffer('qscale_in', torch.tensor([-1], requires_grad=False))
-        self.register_buffer('qscale_w', torch.tensor([-1], requires_grad=False))
-        self.register_buffer('qscale_out', torch.tensor([-1], requires_grad=False))
-        self.register_buffer('qscale_m', torch.tensor([-1], requires_grad=False))
+        self.observer_input = Observer(num_bits=num_bits)
+        self.observer_weight = Observer(num_bits=num_bits)
+        self.observer_output = Observer(num_bits=num_bits)
 
-        '''Initialize numbers of bits for model quantization and scales.'''
-        self.register_buffer('num_bits_model', torch.tensor([num_bits], requires_grad=False))
-        self.register_buffer('num_bits_scale', torch.tensor([-1], requires_grad=False))
+        self.register_buffer('m', torch.tensor(1.0, requires_grad=False))
+        self.register_buffer('qscale_in', torch.tensor(1.0, requires_grad=False))
+        self.register_buffer('qscale_w', torch.tensor(1.0, requires_grad=False))
+        self.register_buffer('qscale_out', torch.tensor(1.0, requires_grad=False))
+        self.register_buffer('qscale_m', torch.tensor(1.0, requires_grad=False))
+        self.register_buffer('num_bits_model', torch.tensor(num_bits, requires_grad=False))
+        self.register_buffer('num_bits_scale', torch.tensor(self.num_bits_obs, requires_grad=False))
 
-    def forward(self, 
-                features: torch.Tensor):
+        self.use_obs = False
+        self.first_layer = False
+
+    def reset_parameters(self):
+        '''
+            Reset parameters of the model
+        '''
+        self.linear.reset_parameters()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        '''
+            Custom message function for PointNetConv.
+            We select the message function based on the current mode (calibration, quantize, or float)
+        '''
+        if self.calib_mode.item() and not self.quantize_mode.item():
+            return self.forward_calib(x)
+        elif self.quantize_mode.item():
+            return self.forward_quant(x)
+        elif not self.calib_mode.item() and not self.quantize_mode.item():
+            return self.forward_float(x)
+        else:
+            raise ValueError('Invalid mode')
+
+    def forward_float(self, 
+                x: torch.Tensor):
 
         '''Standard forward pass of Linear layer.'''
-        return self.linear(features)
+        return self.linear(x)
     
-    def calibration(self, 
-                    features: torch.Tensor,
-                    use_obs: bool = False):
+    def forward_calib(self, 
+                    x: torch.Tensor):
         
         '''Calibration forward for updating observers.'''
-        if use_obs:
+        if self.use_obs:
             '''Update input observer.'''
-            self.observer_in.update(features)
-            features = FakeQuantize.apply(features, self.observer_in)
+            self.observer_input.update(x)
+            x = FakeQuantize.apply(x, self.observer_input)
 
         '''Update weight observer and propagate message through linear layer.'''
-        self.observer_w.update(self.linear.weight.data)
+        self.observer_weight.update(self.linear.weight.data)
 
         if self.bias:
-            features = F.linear(features, FakeQuantize.apply(self.linear.weight, self.observer_w), self.linear.bias)
+            x = F.linear(x, FakeQuantize.apply(self.linear.weight, self.observer_weight), self.linear.bias)
         else:
-            features = F.linear(features, FakeQuantize.apply(self.linear.weight, self.observer_w))
+            x = F.linear(x, FakeQuantize.apply(self.linear.weight, self.observer_weight))
         
         '''Update output observer and calculate output.'''
-        self.observer_out.update(features)
-        features = FakeQuantize.apply(features, self.observer_out)
-        return features
+        self.observer_output.update(x)
+        x = FakeQuantize.apply(x, self.observer_output)
+        return x
 
-
-    def freeze(self,
-               observer_in: Observer = None,
-               observer_out: Observer = None,
-               num_bits: int = 32):
-        
-        '''Freeze model - quantize weights/bias and calculate scales'''
-        if observer_in is not None:
-            self.observer_in = observer_in
-        if observer_out is not None:
-            self.observer_out = observer_out
-
-        self.num_bits_scale = torch.tensor([num_bits], requires_grad=False)
-
-        scale_in = (2**num_bits-1) * self.observer_in.scale
-        self.qscale_in = scale_in.round()
-        self.observer_in.scale = scale_in.round() / (2**num_bits-1)
-
-        scale_w = (2**num_bits-1) * self.observer_w.scale
-        self.qscale_w = scale_w.round()
-        self.observer_w.scale = scale_w.round() / (2**num_bits-1)
-
-        scale_out = (2**num_bits-1) * self.observer_out.scale
-        self.qscale_out = scale_out.round()
-        self.observer_out.scale = scale_out.round() / (2**num_bits-1)
-
-        m = (self.observer_w.scale * self.observer_in.scale / self.observer_out.scale)
-        m = (2**num_bits-1) * m
-        self.qscale_m = m.round()
-        self.m = m.round() / (2**num_bits-1)
-            
-        self.linear.weight = torch.nn.Parameter(self.observer_w.quantize_tensor(self.linear.weight))
-        self.linear.weight = torch.nn.Parameter(self.linear.weight - self.observer_w.zero_point)
-
-        if self.bias:
-            self.linear.bias = torch.nn.Parameter(quantize_tensor(self.linear.bias, 
-                                        scale=self.observer_in.scale * self.observer_w.scale,
-                                        zero_point=0, 
-                                        num_bits=32, 
-                                        signed=True))
-
-    def q_forward(self, 
-                  features: torch.Tensor, 
-                  first_layer: bool = False):
+    def forward_quant(self, 
+                  x: torch.Tensor):
         
         '''Quantized forward pass of Linear layer.'''
         
-        '''Quantize input features'''
-        if first_layer:
-            '''We need to quantize features.'''
-            features = self.observer_in.quantize_tensor(features)
-            features = features - self.observer_in.zero_point
+        '''Quantize input x'''
+        if self.first_layer:
+            '''We need to quantize x.'''
+            x = self.observer_input.quantize_tensor(x)
+            x = x - self.observer_input.zero_point
         else:
-            '''For other layers, we do not need to quantize features'''
-            features = features - self.observer_in.zero_point
-        features = self.linear(features)
-        features = (features * self.m + self.observer_out.zero_point).round()
-        features = torch.clamp(features, 0, 2**self.num_bits - 1)
-        return features
+            '''For other layers, we do not need to quantize x'''
+            x = x - self.observer_input.zero_point
+        x = self.linear(x)
+        x = (x * self.m).round() + self.observer_output.zero_point
+        x = torch.clamp(x, 0, 2**self.num_bits - 1)
+        return x
+
+    def calibrate(self):
+        self.calib_mode.fill_(True)
+
+    def quantize(self,
+               observer_input: Observer = None,
+               observer_output: Observer = None):
+        '''
+            Quantize model - quantize weights/bias and calculate scales
+        '''
+        self.quantize_mode.fill_(True)
+
+        if observer_input is not None:
+            self.observer_input = observer_input
+        if observer_output is not None:
+            self.observer_output = observer_output
+
+        # Quantize scales for input, weight, and output
+        self.qscale_in.copy_( (2**self.num_bits_obs * self.observer_input.scale).round() )
+        self.observer_input.scale = self.qscale_in / (2 ** self.num_bits_obs)
+
+        self.qscale_w.copy_( (2**self.num_bits_obs * self.observer_weight.scale).round() )
+        self.observer_weight.scale = self.qscale_w / (2 ** self.num_bits_obs)
+
+        self.qscale_out.copy_( (2**self.num_bits_obs * self.observer_output.scale).round() )
+        self.observer_output.scale = self.qscale_out / (2 ** self.num_bits_obs)
+
+        # Compute scaling factor m
+        qscale_m = (self.observer_weight.scale * self.observer_input.scale) / self.observer_output.scale
+        self.qscale_m.copy_( (2**self.num_bits_obs * qscale_m).round() )
+        self.m.copy_(self.qscale_m / (2 ** self.num_bits_obs))
+            
+        self.linear.weight = torch.nn.Parameter(self.observer_weight.quantize_tensor(self.linear.weight))
+        self.linear.weight = torch.nn.Parameter(self.linear.weight - self.observer_weight.zero_point)
+
+        if self.bias:
+            self.linear.bias = torch.nn.Parameter(quantize_tensor(self.linear.bias, 
+                                        scale=self.observer_input.scale * self.observer_weight.scale,
+                                        zero_point=0, 
+                                        num_bits=32, 
+                                        signed=True))
 
     def __repr__(self):
         return f"{self.__class__.__name__}(input_dim={self.input_dim}, output_dim={self.output_dim}, bias={self.bias}, num_bits={self.num_bits})"
