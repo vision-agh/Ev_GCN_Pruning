@@ -48,13 +48,13 @@ class EventDS(Dataset):
             events[key] = events[key][mask]
 
         # Normalize x y and t to [0, 128]
-        events['x'] = (events['x'] / self.cfg.width) * 128
-        events['y'] = (events['y'] / self.cfg.height) * 128
-        events['t'] = (events['t'] / ( self.cfg.time_window * 1e+6 )) * 128
+        # events['x'] = (events['x'] / self.cfg.width)
+        # events['y'] = (events['y'] / self.cfg.height)
+        events['t'] = (events['t'] / ( self.cfg.time_window * 1e+6 )) * 100
 
         events = np.column_stack((events['x'], events['y'], events['t'], events['p']))
 
-        x, pos, edge_index = matrix_neighbour.generate_edges(events.astype(np.int32), self.cfg.radius, 128, 128)
+        x, pos, edge_index = matrix_neighbour.generate_edges(events.astype(np.int32), self.cfg.radius, 120, 100)
 
         x = torch.tensor(x, dtype=torch.float32).unsqueeze(1)
         pos = torch.tensor(pos, dtype=torch.float32)

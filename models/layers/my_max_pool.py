@@ -2,10 +2,9 @@ import torch
 from torch.nn import Module
 
 class MyGraphPooling(Module):
-    def __init__(self, pool_size=4, max_dimension=256):
+    def __init__(self, pool_size: list):
         super(MyGraphPooling, self).__init__()
-        self.pool_size = pool_size
-        self.max_dimension = max_dimension
+        self.pool_size = torch.tensor(pool_size, dtype=torch.long)
 
         self.pool_temporal = False
         self.only_pos = False
@@ -20,7 +19,7 @@ class MyGraphPooling(Module):
                 batch: torch.Tensor         # [N]
                ):
         # 1) quantize spatial (and optionally temporal) coords
-        qpos = torch.div(pos, self.pool_size, rounding_mode='floor').long()
+        qpos = torch.div(pos, self.pool_size.to(x.device), rounding_mode='floor').long()
         if self.pool_temporal:
             qpos = qpos[:, :2]    # only spatial
         
@@ -76,4 +75,4 @@ class MyGraphPooling(Module):
         return pooled_x, uniq_qpos, ei, new_batch
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(pool_size={self.pool_size}, max_dimension={self.max_dimension})"
+        return f"{self.__class__.__name__}(pool_size={self.pool_size})"

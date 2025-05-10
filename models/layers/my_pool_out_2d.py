@@ -3,13 +3,13 @@ from torch.nn import Module
 
 from models.quantisation.observer import Observer, FakeQuantize
 
-class MyGraphPoolOut(Module):
+class MyGraphPoolOut2D(Module):
     def __init__(self, 
                  pool_size: int = 4, 
                  max_dimension: int = 256,
                  num_bits:int = 8):
         
-        super(MyGraphPoolOut, self).__init__()
+        super(MyGraphPoolOut2D, self).__init__()
 
         self.pool_size = pool_size
         self.max_dimension = max_dimension
@@ -45,7 +45,7 @@ class MyGraphPoolOut(Module):
                 batch: torch.Tensor):
         
         max_batch = batch.max() + 1
-        qpos = torch.div(pos, self.pool_size, rounding_mode='floor').long()
+        qpos = torch.div(pos[:,:2], self.pool_size, rounding_mode='floor').long()
         key = torch.cat([batch.unsqueeze(1), qpos], dim=1)
 
         unique_keys, inv = torch.unique(key, dim=0, return_inverse=True)
@@ -53,10 +53,10 @@ class MyGraphPoolOut(Module):
         uniq_qpos = unique_keys[:, 1:]
 
         pooled_x = torch.zeros((uniq_qpos.size(0), x.size(1)), dtype=x.dtype, device=x.device)
-        output_x = torch.zeros((max_batch, self.grid_size ** 3, x.size(1)), dtype=x.dtype, device=x.device)
+        output_x = torch.zeros((max_batch, self.grid_size ** 2, x.size(1)), dtype=x.dtype, device=x.device)
 
         pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False) #TODO Change to True
-        indices_1d = uniq_qpos[:, 0] * self.grid_size ** 2 + uniq_qpos[:, 1] * self.grid_size + uniq_qpos[:, 2]
+        indices_1d = uniq_qpos[:, 0] * self.grid_size + uniq_qpos[:, 1]
         
         output_x[new_batch, indices_1d] = pooled_x
         output_x = output_x.flatten(start_dim=1)

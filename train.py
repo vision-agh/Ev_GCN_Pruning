@@ -20,13 +20,13 @@ def main(args):
     wandb_logger = WandbLogger(project='event_recognition_pruning', 
                                name=f'{cfg.data_name}_{cfg.radius}', 
                                log_model='all')
-    wandb_logger.watch(model)
 
     trainer = L.Trainer(max_epochs=cfg.max_epochs, 
                         log_every_n_steps=cfg.log_every_n_steps, 
                         gradient_clip_val=cfg.gradient_clip_val, 
                         accumulate_grad_batches=cfg.accumulate_grad_batches, 
-                        logger=wandb_logger)
+                        logger=wandb_logger,
+                        )
     
     trainer.fit(model, dm)
 

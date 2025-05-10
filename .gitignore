@@ -1,5 +1,7 @@
 # Folders
 wandb/
+event_recognition_pruning/
+lightning_logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
