@@ -13,22 +13,22 @@ class MyModel(nn.Module):
         super(MyModel, self).__init__()
         self.cfg = cfg
 
-        self.conv1 = MyPointNetConv(4, 16, False, cfg.num_bits, True)
+        self.conv1 = MyPointNetConv(3, 16, False, cfg.num_bits, True)
 
         self.pool1 = MyGraphPooling([6, 5, 5])
 
-        self.conv2 = MyPointNetConv(19, 32, False, cfg.num_bits, False)
-        self.conv3 = MyPointNetConv(35, 32, False, cfg.num_bits, False)
+        self.conv2 = MyPointNetConv(18, 32, False, cfg.num_bits, False)
+        self.conv3 = MyPointNetConv(34, 32, False, cfg.num_bits, False)
 
         self.pool2 = MyGraphPooling([2, 2, 2])
 
-        self.conv4 = MyPointNetConv(35, 64, False, cfg.num_bits, False)
-        self.conv5 = MyPointNetConv(67, 64, False, cfg.num_bits, False)
+        self.conv4 = MyPointNetConv(34, 32, False, cfg.num_bits, False)
+        self.conv5 = MyPointNetConv(34, 32, False, cfg.num_bits, False)
 
         self.pool_out = MyGraphPoolOut2D(2, max_dimension=10)
 
         # Linear layers
-        self.linear1 = MyLinear(input_dim=64 * 5 ** 2,
+        self.linear1 = MyLinear(input_dim=32 * 5 ** 2,
                                 output_dim=2,
                                 bias=True,
                                 num_bits=cfg.num_bits)
@@ -44,19 +44,18 @@ class MyModel(nn.Module):
                 batch: torch.Tensor):
         
         '''Forward pass of the model.'''
-        x = self.conv1(x, pos, edge_index)
+        x = self.conv1(x, pos[:,:2], edge_index)
         x, pos, edge_index, batch = self.pool1(x, pos, edge_index, batch)
 
-        x = self.conv2(x, pos, edge_index)
-        x = self.conv3(x, pos, edge_index)
+        x = self.conv2(x, pos[:,:2], edge_index)
+        x = self.conv3(x, pos[:,:2], edge_index)
         x, pos, edge_index, batch = self.pool2(x, pos, edge_index, batch)
 
-        x = self.conv4(x, pos, edge_index)
-        x = self.conv5(x, pos, edge_index)
+        x = self.conv4(x, pos[:,:2], edge_index)
+        x = self.conv5(x, pos[:,:2], edge_index)
 
         x = self.pool_out(x, pos, batch)
 
-        x = nn.functional.dropout(x, p=0.2, training=self.training)
         x = self.linear1(x)
 
         if self.quantize_mode.item():

@@ -13,6 +13,7 @@ class EventDS(Dataset):
         
         self.files = files
         self.cfg = cfg
+        self.mode = mode
 
         # if mode == 'test' or mode == 'val':
         #     self.random_crop = RandomCrop([0.75, 0.75], p=0.2, width=dim[0], height=dim[1])
@@ -51,6 +52,17 @@ class EventDS(Dataset):
         # events['x'] = (events['x'] / self.cfg.width)
         # events['y'] = (events['y'] / self.cfg.height)
         events['t'] = (events['t'] / ( self.cfg.time_window * 1e+6 )) * 100
+
+
+        # if self.mode == 'train':
+        #     if torch.rand(1) > 0.5:
+        #         events['x'] = 120 - 1 - events['x']
+
+        if self.mode == 'train':
+            events['x'] = events['x'] + int(np.random.uniform(-5, 5))
+            events['x'] = np.clip(events['x'], 0, 119)
+
+
 
         events = np.column_stack((events['x'], events['y'], events['t'], events['p']))
 

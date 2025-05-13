@@ -55,7 +55,7 @@ class MyGraphPoolOut2D(Module):
         pooled_x = torch.zeros((uniq_qpos.size(0), x.size(1)), dtype=x.dtype, device=x.device)
         output_x = torch.zeros((max_batch, self.grid_size ** 2, x.size(1)), dtype=x.dtype, device=x.device)
 
-        pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False) #TODO Change to True
+        pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False)
         indices_1d = uniq_qpos[:, 0] * self.grid_size + uniq_qpos[:, 1]
         
         output_x[new_batch, indices_1d] = pooled_x

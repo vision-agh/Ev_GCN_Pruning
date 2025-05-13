@@ -33,7 +33,7 @@ class NCars(L.LightningDataModule):
                           num_workers=self.cfg.num_workers, 
                           shuffle=True, 
                           collate_fn=self.collate_fn, 
-                          persistent_workers=False)
+                          persistent_workers=True)
     
     def val_dataloader(self):
         return DataLoader(self.test_data, 
@@ -41,7 +41,7 @@ class NCars(L.LightningDataModule):
                           num_workers=self.cfg.num_workers, 
                           shuffle=False, 
                           collate_fn=self.collate_fn, 
-                          persistent_workers=False)
+                          persistent_workers=True)
     
     def test_dataloader(self):
         return DataLoader(self.test_data, 

@@ -8,6 +8,7 @@ from typing import Dict, Tuple
 from torch.nn.functional import softmax
 
 from models.model import MyModel
+from utils.structured_pruning import structured_pruning
 
 import wandb
 import numpy as np
@@ -39,6 +40,8 @@ class LNRecognition(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
+        # return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
         return optimizer
 
     def forward(self, data):
@@ -80,3 +83,18 @@ class LNRecognition(L.LightningModule):
 
         self.log('test_loss', loss, on_epoch=True, logger=True, batch_size=self.batch_size)
         self.log('test_acc', accuracy, on_epoch=True, logger=True, batch_size=self.batch_size)
+
+    
+    def on_validation_epoch_end(self):
+        # Pruning
+        from models.layers.my_pointnet import MyPointNetConv
+
+        epochs = {50: 0.1, 60: 0.2, 70: 0.3, 80: 0.4, 90: 0.5}
+
+        if self.trainer.current_epoch in epochs.keys():
+            prune_amount = epochs[self.trainer.current_epoch]
+            print(f'Pruning {prune_amount} of the model')
+            for name, module in self.model.named_modules():
+                if isinstance(module, MyPointNetConv):
+                    structured_pruning(module, amount=prune_amount)
+                    print(f'Pruned {name} with amount {prune_amount}')
