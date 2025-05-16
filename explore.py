@@ -2,6 +2,7 @@ from models.recognition import LNRecognition
 from data.mnist import MNIST
 
 from omegaconf import OmegaConf
+from utils.structured_pruning import structured_pruning
 
 import lightning as L
 import torch
@@ -12,11 +13,28 @@ def main():
     dm = MNIST(cfg)
     dm.setup()
 
+    cfg.num_bits = 6
 
-    cfg.num_bits = 8
+    model = LNRecognition.load_from_checkpoint('checkpoints/mnist-dvs_3-v4.ckpt', cfg=cfg).cuda()
+    model.model.eval()
+    # model.model.calibrate()
 
-    model = LNRecognition.load_from_checkpoint('checkpoints/mnist-dvs_3-v4.ckpt', cfg=cfg).cuda().eval()
-    model.model.calibrate()
+    # for idx, batch_data in enumerate(dm.train_dataloader()):
+    #     for k, v in batch_data.items():
+    #         if isinstance(v, torch.Tensor):
+    #             batch_data[k] = v.cuda()
+
+    #     out = model(batch_data)
+
+    #     if idx == 100:
+    #         break
+    
+        
+    # model.model.eval()
+    
+
+    # structured_pruning(model.model.conv5, 1/128)
+
 
     acc = 0
     itere = 0
