@@ -8,6 +8,7 @@ from models.layers.my_pointnet import MyPointNetConv
 from models.layers.my_linear import MyLinear
 
 
+
 class MyModel(nn.Module):
     def __init__(self, cfg):
         super(MyModel, self).__init__()
@@ -15,24 +16,23 @@ class MyModel(nn.Module):
 
         self.conv1 = MyPointNetConv(3, 16, False, cfg.num_bits, True)
 
-        self.pool1 = MyGraphPooling([6, 5, 5])
+        self.pool1 = MyGraphPooling([4, 4, 4])
 
         self.conv2 = MyPointNetConv(18, 32, False, cfg.num_bits, False)
-        self.conv3 = MyPointNetConv(34, 32, False, cfg.num_bits, False)
+        self.conv3 = MyPointNetConv(34, 64, False, cfg.num_bits, False)
 
         self.pool2 = MyGraphPooling([2, 2, 2])
 
-        self.conv4 = MyPointNetConv(34, 32, False, cfg.num_bits, False)
-        self.conv5 = MyPointNetConv(34, 32, False, cfg.num_bits, False)
+        self.conv4 = MyPointNetConv(66, 64, False, cfg.num_bits, False)
+        self.conv5 = MyPointNetConv(66, 128, False, cfg.num_bits, False)
 
-        self.pool_out = MyGraphPoolOut2D(2, max_dimension=10)
+        self.pool_out = MyGraphPoolOut2D(4, max_dimension=16)
 
         # Linear layers
-        self.linear1 = MyLinear(input_dim=32 * 5 ** 2,
-                                output_dim=2,
+        self.linear1 = MyLinear(input_dim=128 * 4 ** 2,
+                                output_dim=cfg.num_classes,
                                 bias=True,
                                 num_bits=cfg.num_bits)
-        
 
         # Modes for calibration and quantization
         self.register_buffer('calib_mode', torch.tensor(False, requires_grad=False))
@@ -45,10 +45,12 @@ class MyModel(nn.Module):
         
         '''Forward pass of the model.'''
         x = self.conv1(x, pos[:,:2], edge_index)
+
         x, pos, edge_index, batch = self.pool1(x, pos, edge_index, batch)
 
         x = self.conv2(x, pos[:,:2], edge_index)
         x = self.conv3(x, pos[:,:2], edge_index)
+
         x, pos, edge_index, batch = self.pool2(x, pos, edge_index, batch)
 
         x = self.conv4(x, pos[:,:2], edge_index)

@@ -7,15 +7,16 @@ from lightning.pytorch.loggers.wandb import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 
 from data.ncars import NCars
+from data.mnist import MNIST
 from models.recognition import LNRecognition
 
 
 def main(args):
-    cfg = OmegaConf.load('configs/ncars.yaml')
+    cfg = OmegaConf.load('configs/mnist.yaml')
 
     print(cfg)
 
-    dm = NCars(cfg)
+    dm = MNIST(cfg)
     dm.setup()
 
     model = LNRecognition(cfg)

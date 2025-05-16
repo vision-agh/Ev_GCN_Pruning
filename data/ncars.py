@@ -25,7 +25,8 @@ class NCars(L.LightningDataModule):
                                         'events.txt'))
         return EventDS(files, 
                        self.cfg, 
-                       mode=mode)
+                       reader=self.load_events,
+                       mode=mode,)
 
     def train_dataloader(self):
         return DataLoader(self.train_data, 
@@ -74,3 +75,29 @@ class NCars(L.LightningDataModule):
             'batch': batch,
             'label': label
         }
+    
+    @staticmethod
+    def load_events(file: str,
+                    cfg):
+        annotation_file = file.replace('events.txt', 'is_car.txt')
+        events = np.loadtxt(file)
+        label = np.loadtxt(annotation_file).item()
+
+        # Extract and process events data
+        all_x, all_y, all_ts, all_p = events.T
+        all_ts *= 1e+6  # Convert to seconds
+        all_p[all_p == 0] = -1
+
+        # Create dictionary for events
+        events = {
+            'x': all_x,
+            'y': all_y,
+            't': all_ts,
+            'p': all_p
+        }
+
+        mask = events['t'] < cfg.time_window
+        for key in events:
+            events[key] = events[key][mask]
+
+        return events, label

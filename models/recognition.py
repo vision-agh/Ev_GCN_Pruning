@@ -29,7 +29,7 @@ class LNRecognition(L.LightningModule):
         self.accuracy = Accuracy(task="multiclass", num_classes=cfg.num_classes)
 
         if cfg.num_classes > 3:
-            self.accuracy_top_3 = Accuracy(task="multiclass", num_classes=cfg.num_classes, top_k=3).to(self.device)
+            self.accuracy_top_3 = Accuracy(task="multiclass", num_classes=cfg.num_classes, top_k=3)
 
         self.save_hyperparameters()
 
@@ -40,9 +40,11 @@ class LNRecognition(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
-        # return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
-        return optimizer
+        # lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
+        # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
+        lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda epoch: 1 if epoch < 20 else 0.1)
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
+        # return optimizer
 
     def forward(self, data):
         x = self.model(data['x'], data['pos'], data['edge_index'], data['batch'])
@@ -71,7 +73,7 @@ class LNRecognition(L.LightningModule):
 
         if self.num_classes > 3:
             pred = softmax(outputs, dim=-1)
-            top_3 = self.accuracy_top_3(preds=pred.unsqueeze(0).to(self.device), target=torch.tensor([batch['y']]).to(self.device))
+            top_3 = self.accuracy_top_3(preds=pred, target=batch['label'])
             self.log('val_acc_top_3', top_3, on_epoch=True, logger=True, batch_size=self.batch_size)
 
     def test_step(self, batch, batch_idx):
@@ -85,16 +87,16 @@ class LNRecognition(L.LightningModule):
         self.log('test_acc', accuracy, on_epoch=True, logger=True, batch_size=self.batch_size)
 
     
-    def on_validation_epoch_end(self):
-        # Pruning
-        from models.layers.my_pointnet import MyPointNetConv
+    # def on_validation_epoch_end(self):
+    #     # Pruning
+    #     from models.layers.my_pointnet import MyPointNetConv
 
-        epochs = {50: 0.1, 60: 0.2, 70: 0.3, 80: 0.4, 90: 0.5}
+    #     epochs = {50: 0.1, 60: 0.2, 70: 0.3, 80: 0.4, 90: 0.5}
 
-        if self.trainer.current_epoch in epochs.keys():
-            prune_amount = epochs[self.trainer.current_epoch]
-            print(f'Pruning {prune_amount} of the model')
-            for name, module in self.model.named_modules():
-                if isinstance(module, MyPointNetConv):
-                    structured_pruning(module, amount=prune_amount)
-                    print(f'Pruned {name} with amount {prune_amount}')
+    #     if self.trainer.current_epoch in epochs.keys():
+    #         prune_amount = epochs[self.trainer.current_epoch]
+    #         print(f'Pruning {prune_amount} of the model')
+    #         for name, module in self.model.named_modules():
+    #             if isinstance(module, MyPointNetConv):
+    #                 structured_pruning(module, amount=prune_amount)
+    #                 print(f'Pruned {name} with amount {prune_amount}')
