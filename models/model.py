@@ -30,6 +30,12 @@ class MyModel(nn.Module):
 
         # Linear layers
         self.linear1 = MyLinear(input_dim=128 * 4 ** 2,
+                                output_dim=1024,
+                                bias=True,
+                                num_bits=cfg.num_bits)
+        
+
+        self.linear2 = MyLinear(input_dim=1024,
                                 output_dim=cfg.num_classes,
                                 bias=True,
                                 num_bits=cfg.num_bits)
@@ -59,10 +65,13 @@ class MyModel(nn.Module):
         x = self.pool_out(x, pos, batch)
 
         x = self.linear1(x)
+        x = torch.relu(x)
+        # x = torch.dropout(x, p=0.2, train=self.training)
+        x = self.linear2(x)
 
         if self.quantize_mode.item():
             x = self.linear1.observer_output.dequantize_tensor(x)
-        return x
+        return torch.log_softmax(x, dim=-1)
     
     def calibrate(self):
         '''Calibrate the model.'''

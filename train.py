@@ -22,6 +22,14 @@ def main(args):
     model = LNRecognition(cfg)
     
     print(model)
+
+    checkpoint_callback = ModelCheckpoint(
+        monitor='val_loss',
+        dirpath='checkpoints/',
+        filename=f'{cfg.data_name}_{cfg.radius}',
+        save_top_k=1,
+        mode='min',
+    )
     
     wandb_logger = WandbLogger(project='event_recognition_pruning', 
                                name=f'{cfg.data_name}_{cfg.radius}', 
@@ -33,7 +41,7 @@ def main(args):
                         gradient_clip_val=cfg.gradient_clip_val, 
                         accumulate_grad_batches=cfg.accumulate_grad_batches, 
                         logger=wandb_logger,
-                        callbacks=[lr_monitor]
+                        callbacks=[lr_monitor, checkpoint_callback],
                         )
     
     trainer.fit(model, dm)

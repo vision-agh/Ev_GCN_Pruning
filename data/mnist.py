@@ -12,21 +12,30 @@ class MNIST(L.LightningDataModule):
         super().__init__()
 
         self.cfg = cfg
-            
+        
     def setup(self, stage=None):
-        self.train_data = self.generate_ds('train')
-        self.test_data = self.generate_ds('test')
+        all_files = glob.glob(os.path.join(self.cfg.data_dir,
+                                            self.cfg.data_name,
+                                            '*',
+                                            '*.aedat'))
+        
 
-    def generate_ds(self, mode: str):
-        files = glob.glob(os.path.join(self.cfg.data_dir, 
-                                        self.cfg.data_name, 
-                                        mode, 
-                                        '*', 
-                                        '*.aedat'))
-        return EventDS(files, 
-                       self.cfg, 
-                       reader=self.load_events,
-                       mode=mode,)
+        # split the files into train and test sets 
+        num_train = int(len(all_files) * 0.8)
+        # shuffle the files
+        np.random.shuffle(all_files)
+        train_files = all_files[:num_train]
+        test_files = all_files[num_train:]
+        self.train_data = EventDS(train_files,
+                                 self.cfg,
+                                 reader=self.load_events,
+                                 mode='train')
+        
+        self.test_data = EventDS(test_files,
+                                self.cfg,
+                                reader=self.load_events,
+                                mode='test')
+        
 
     def train_dataloader(self):
         return DataLoader(self.train_data, 
@@ -90,9 +99,10 @@ class MNIST(L.LightningDataModule):
                         polarity_mask=1,
                         polarity_shift=None)
 
-            events = {'t': t, 'x': 127 - y, 'y': 127 - x, 'p': 1 - p.astype(int)}
+            events = {'t': t, 'x': 127 - y, 'y': 127 - x, 'p': 1 - 2 * p.astype(int)}
         
         middle_t = len(events['t']) // 2
+        middle_t = events['t'][middle_t]
         mask1 = events['t'] < middle_t + cfg.time_window // 2
         mask2 = events['t'] > middle_t - cfg.time_window // 2
         mask = mask1 & mask2

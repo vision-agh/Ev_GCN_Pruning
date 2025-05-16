@@ -86,7 +86,10 @@ class LNRecognition(L.LightningModule):
         self.log('test_loss', loss, on_epoch=True, logger=True, batch_size=self.batch_size)
         self.log('test_acc', accuracy, on_epoch=True, logger=True, batch_size=self.batch_size)
 
-    
+    # def on_validation_epoch_end(self):
+    #     if self.trainer.current_epoch == 50:
+    #         self.model.calibrate()
+    #         print('Calibrating the model')
     # def on_validation_epoch_end(self):
     #     # Pruning
     #     from models.layers.my_pointnet import MyPointNetConv

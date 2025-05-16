@@ -25,16 +25,25 @@ class EventDS(Dataset):
         events, label = self.reader(events_file, self.cfg)
 
         if self.mode == 'train':
-            events['x'] = events['x'] + np.random.randint(-5, 5)
-            events['y'] = events['y'] + np.random.randint(-5, 5)
+            # events['x'] = events['x'] + np.random.randint(-5, 5)
+            # events['y'] = events['y'] + np.random.randint(-5, 5)
+            # mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
+            #         (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
+            # for key in events.keys():
+            #     events[key] = events[key][mask]
+
+            angle = np.random.randint(-3, 3)
+            angle = np.deg2rad(angle)
+
+            x, y = events['x'], events['y']
+
+            events['x'] = x * np.cos(angle) - y * np.sin(angle)
+            events['y'] = x * np.sin(angle) + y * np.cos(angle)
+
             mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
                     (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
             for key in events.keys():
                 events[key] = events[key][mask]
-
-
-            if np.random.rand() < 0.2:
-                events['p'] = events['p'] * (-1)
 
         # Normalize x y and t to [0, 128]
         events['x'] = np.floor(events['x'] / self.cfg.org_WIDTH * self.cfg.WIDTH)
