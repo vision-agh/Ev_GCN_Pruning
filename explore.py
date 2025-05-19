@@ -17,7 +17,27 @@ def main():
     dm = MNIST(cfg)
     dm.setup()
 
-    precomputed_space = precompute_space(cfg, depth=0)
+    model = LNRecognition.load_from_checkpoint('checkpoints/mnist-dvs_3-v1.ckpt', cfg=cfg).cuda()
+    model.model.eval()
+
+    acc = 0
+    itere = 0
+    for batch_data in dm.test_dataloader():
+        for k, v in batch_data.items():
+            if isinstance(v, torch.Tensor):
+                batch_data[k] = v.cuda()
+
+        out = model(batch_data)
+        label = batch_data['label']
+
+        out = torch.argmax(out, dim=-1)
+
+        accuracy = (out == label).sum().item()
+        acc += accuracy
+        itere += label.size(0)
+    print(f'Average Accuracy: {acc / itere} for floating point')
+
+    precomputed_space = precompute_space(cfg, depth=10)
     configs = generate_configs(precomputed_space)
 
     print(f'Number of configurations: {len(configs)}')

@@ -11,7 +11,7 @@ from data.mnist import MNIST
 from models.recognition import LNRecognition
 
 
-def main(args):
+def main():
     cfg = OmegaConf.load('configs/mnist.yaml')
 
     print(cfg)
@@ -47,9 +47,6 @@ def main(args):
     trainer.fit(model, dm)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='ncars')
-
+    L.seed_everything(42, workers=True)
     mp.set_start_method('fork', force=True)
-    args = parser.parse_args()
-    main(args)
+    main()

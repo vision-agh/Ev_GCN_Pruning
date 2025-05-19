@@ -2,6 +2,7 @@
 wandb/
 event_recognition_pruning/
 lightning_logs/
+slurm/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
