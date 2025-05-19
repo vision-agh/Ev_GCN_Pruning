@@ -44,7 +44,6 @@ class LNRecognition(L.LightningModule):
         # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda epoch: 1 if epoch < 20 else 0.1)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
-        # return optimizer
 
     def forward(self, data):
         x = self.model(data['x'], data['pos'], data['edge_index'], data['batch'])

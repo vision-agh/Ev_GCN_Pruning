@@ -14,31 +14,54 @@ class MyModel(nn.Module):
         super(MyModel, self).__init__()
         self.cfg = cfg
 
-        self.conv1 = MyPointNetConv(3, 16, False, cfg.num_bits, True)
+        self.conv1 = MyPointNetConv(cfg.conv1.in_channels,
+                                    cfg.conv1.out_channels, 
+                                    cfg.conv1.bias, 
+                                    cfg.conv1.num_bits,
+                                    first_layer=True)
 
-        self.pool1 = MyGraphPooling([4, 4, 4])
+        self.pool1 = MyGraphPooling(pool_size=cfg.pool1.grid)
 
-        self.conv2 = MyPointNetConv(18, 32, False, cfg.num_bits, False)
-        self.conv3 = MyPointNetConv(34, 64, False, cfg.num_bits, False)
+        self.conv2 = MyPointNetConv(cfg.conv2.in_channels,
+                                    cfg.conv2.out_channels, 
+                                    cfg.conv2.bias, 
+                                    cfg.conv2.num_bits,
+                                    first_layer=False)
+        
+        self.conv3 = MyPointNetConv(cfg.conv3.in_channels,
+                                    cfg.conv3.out_channels, 
+                                    cfg.conv3.bias, 
+                                    cfg.conv3.num_bits,
+                                    first_layer=False)
 
-        self.pool2 = MyGraphPooling([2, 2, 2])
+        self.pool2 = MyGraphPooling(pool_size=cfg.pool2.grid)
 
-        self.conv4 = MyPointNetConv(66, 64, False, cfg.num_bits, False)
-        self.conv5 = MyPointNetConv(66, 128, False, cfg.num_bits, False)
+        self.conv4 = MyPointNetConv(cfg.conv4.in_channels,
+                                    cfg.conv4.out_channels, 
+                                    cfg.conv4.bias, 
+                                    cfg.conv4.num_bits,
+                                    first_layer=False)
+        
+        self.conv5 = MyPointNetConv(cfg.conv5.in_channels,
+                                    cfg.conv5.out_channels, 
+                                    cfg.conv5.bias, 
+                                    cfg.conv5.num_bits,
+                                    first_layer=False)
 
-        self.pool_out = MyGraphPoolOut2D(4, max_dimension=16)
+        self.pool_out = MyGraphPoolOut2D(pool_size=cfg.pool_out.pool_size, 
+                                         max_dimension=cfg.pool_out.max_dim)
 
         # Linear layers
-        self.linear1 = MyLinear(input_dim=128 * 4 ** 2,
-                                output_dim=1024,
-                                bias=True,
-                                num_bits=cfg.num_bits)
+        self.linear1 = MyLinear(input_dim=cfg.linear1.in_features,
+                                output_dim=cfg.linear1.out_features,
+                                bias=cfg.linear1.bias,
+                                num_bits=cfg.linear1.num_bits)
         
 
-        self.linear2 = MyLinear(input_dim=1024,
-                                output_dim=cfg.num_classes,
-                                bias=True,
-                                num_bits=cfg.num_bits)
+        self.linear2 = MyLinear(input_dim=cfg.linear2.in_features,
+                                output_dim=cfg.linear2.out_features,
+                                bias=cfg.linear2.bias,
+                                num_bits=cfg.linear2.num_bits)
 
         # Modes for calibration and quantization
         self.register_buffer('calib_mode', torch.tensor(False, requires_grad=False))
