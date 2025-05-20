@@ -102,7 +102,7 @@ def main():
     while True:
         candidates = []
         # gather candidates: +1 plus wszystkie o tym samym BRAM‑ie
-        for i in range(5):
+        for i in range(1, 5):
             for idx_option in equal_bram_indices(bram_lists[i], current_idx[i]):
                 new_idx      = current_idx.copy()
                 new_idx[i]   = idx_option
@@ -127,7 +127,7 @@ def main():
         best_bram   = bram_c
         print(f"↑ {layer_names[layer_id]} → idx {current_idx[layer_id]}  | acc={best_acc:.4f} | bram={best_bram}")
         print(f"conv1 {c1_pruning[current_idx[0]]} + {c1_bits[current_idx[0]]} bits | conv2 {c2_pruning[current_idx[1]]} + {c2_bits[current_idx[1]]} bits | conv3 {c3_pruning[current_idx[2]]} + {c3_bits[current_idx[2]]} bits | conv4 {c4_pruning[current_idx[3]]} + {c4_bits[current_idx[3]]} bits | conv5 {c5_pruning[current_idx[4]]} + {c5_bits[current_idx[4]]} bits")
-        
+
     print("\n──────────────  wynik końcowy  ──────────────")
     print(f"Najlepsza konfiguracja: idx={current_idx}")
     print(f"Accuracy: {best_acc:.4f} | BRAMs: {best_bram}")

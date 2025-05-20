@@ -37,7 +37,7 @@ def main():
         itere += label.size(0)
     print(f'Average Accuracy: {acc / itere} for floating point')
 
-    precomputed_space = precompute_space(cfg, depth=10)
+    precomputed_space = precompute_space(cfg, depth_start=0, depth_end=2)
     configs = generate_configs(precomputed_space)
 
     print(f'Number of configurations: {len(configs)}')

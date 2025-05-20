@@ -61,7 +61,6 @@ def precompute_space(config, depth_start=0, depth_end=1):
     return precomputed_space
 
 
-
 def generate_configs(precomputed_space):
     """
     Generate all possible model configurations by taking the Cartesian product
