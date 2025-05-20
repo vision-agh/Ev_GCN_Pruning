@@ -88,8 +88,12 @@ class MyModel(nn.Module):
         x = self.pool_out(x, pos, batch)
 
         x = self.linear1(x)
-        x = torch.relu(x)
-        # x = torch.dropout(x, p=0.2, train=self.training)
+
+        if not self.quantize_mode:
+            x = torch.relu(x)
+        else:
+            x[x < self.linear1.observer_output.zero_point] = self.linear1.observer_output.zero_point
+
         x = self.linear2(x)
 
         if self.quantize_mode.item():
@@ -107,6 +111,7 @@ class MyModel(nn.Module):
         self.conv5.calibrate()
         self.pool_out.calibrate()
         self.linear1.calibrate()
+        self.linear2.calibrate()
 
     def quantize(self):
         '''Quantize the model.'''
@@ -119,3 +124,4 @@ class MyModel(nn.Module):
         self.conv5.quantize(observer_input=self.conv4.observer_output)
         self.pool_out.quantize(observer_input=self.conv5.observer_output)
         self.linear1.quantize(observer_input=self.conv5.observer_output)
+        self.linear2.quantize(observer_input=self.linear1.observer_output)

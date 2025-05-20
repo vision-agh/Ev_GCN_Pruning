@@ -1,4 +1,4 @@
-data_dir: '/home/imperator/Datasets'
+data_dir: '/home/lsriw/Datasets'
 data_name: 'mnist-dvs'
 
 org_WIDTH: 128

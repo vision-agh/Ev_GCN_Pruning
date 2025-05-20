@@ -1,7 +1,7 @@
 import math
 import itertools
 
-def precompute_space(config, depth=0):
+def precompute_space(config, depth_start=0, depth_end=1):
     """
     Precompute the space for the given configuration.
 
@@ -35,7 +35,7 @@ def precompute_space(config, depth=0):
             multiple = 9 if num_bits == 8 else 3
             max_mulpiple = num_channels // multiple
 
-            for j in range(depth+1):
+            for j in range(depth_start, depth_end):
                 new_pruned_channels = (max_mulpiple - j) * multiple
                 if new_pruned_channels <= 0:
                     break
@@ -94,7 +94,7 @@ def generate_configs(precomputed_space):
 if __name__ == '__main__':
     from omegaconf import OmegaConf
     cfg = OmegaConf.load('configs/mnist.yaml')
-    precomputed_space = precompute_space(cfg, depth=2)
+    precomputed_space = precompute_space(cfg, depth_start=0, depth_end=100)
     configs = generate_configs(precomputed_space)
     print(precomputed_space)
     # print(configs)
