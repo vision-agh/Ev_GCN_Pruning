@@ -5,6 +5,7 @@ from omegaconf import OmegaConf
 
 from models.recognition import LNRecognition
 from data.mnist import MNIST
+from data.ncars import NCars
 from utils.structured_pruning import structured_pruning
 from utils.precompute_space import precompute_space
 
@@ -13,7 +14,12 @@ def main():
     # ───────────────────────────── baseline ─────────────────────────────
     L.seed_everything(42, workers=True)
     cfg = OmegaConf.load('configs/mnist.yaml')
-    dm = MNIST(cfg)
+
+    if cfg.data_name == 'ncars':
+        dm = NCars(cfg)
+    elif cfg.data_name == 'mnist-dvs':
+        dm = MNIST(cfg)
+
     dm.setup()
 
     baseline_model = LNRecognition.load_from_checkpoint(

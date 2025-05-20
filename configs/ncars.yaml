@@ -12,13 +12,9 @@ T: 100
 batch_size: 64
 num_workers: 8
 
-width: 120
-height: 100
 num_classes: 2
 
-
 radius: 3
-num_bits: 8
 
 # Trainer
 lr: 0.001
@@ -28,4 +24,61 @@ log_every_n_steps: 1
 gradient_clip_val: 0.0
 accumulate_grad_batches: 1
 
+# Augmentation
+rotate: False
+rotate_angle: 5
 
+hflip: 0.5
+
+# Model
+conv1:
+  in_channels: 3
+  out_channels: 18
+  num_bits: 8
+  bias: False
+
+pool1:
+  grid: [6, 5, 5]
+
+conv2:
+  in_channels: 20
+  out_channels: 36
+  num_bits: 8
+  bias: False
+
+conv3:
+  in_channels: 38
+  out_channels: 72
+  num_bits: 8
+  bias: False
+
+pool2:
+  grid: [2, 2, 2]
+
+conv4:
+  in_channels: 74
+  out_channels: 72
+  num_bits: 8
+  bias: False
+
+conv5:
+  in_channels: 74
+  out_channels: 135
+  num_bits: 8
+  bias: False
+
+pool_out:
+  pool_size: 5
+  max_dim: 10
+
+linear1:
+  in_features: 540 # 135*2**2
+  out_features: 1024
+  num_bits: 8
+  bias: True
+
+linear2:
+  in_features: 1024
+  out_features: 2
+  num_bits: 8
+  bias: True

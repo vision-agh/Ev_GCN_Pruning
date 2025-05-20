@@ -8,15 +8,21 @@ from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 
 from data.ncars import NCars
 from data.mnist import MNIST
+from data.cifar import CIFAR
 from models.recognition import LNRecognition
 
 
 def main():
-    cfg = OmegaConf.load('configs/mnist.yaml')
+    cfg = OmegaConf.load('configs/cifar.yaml')
 
     print(cfg)
 
-    dm = MNIST(cfg)
+    if cfg.data_name == 'ncars':
+        dm = NCars(cfg)
+    elif cfg.data_name == 'mnist-dvs':
+        dm = MNIST(cfg)
+    elif cfg.data_name == 'cifar10-dvs':
+        dm = CIFAR(cfg)
     dm.setup()
 
     model = LNRecognition(cfg)

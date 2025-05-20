@@ -25,26 +25,13 @@ class EventDS(Dataset):
         events, label = self.reader(events_file, self.cfg)
 
         if self.mode == 'train':
-            # events['x'] = events['x'] + np.random.randint(-5, 5)
-            # events['y'] = events['y'] + np.random.randint(-5, 5)
-            # mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
-            #         (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
-            # for key in events.keys():
-            #     events[key] = events[key][mask]
+            # Randomly rotate the events
+            if self.cfg.rotate:
+                events = self.RandomRotate(events)
 
-            angle = np.random.randint(-3, 3)
-            angle = np.deg2rad(angle)
+            events = self.RandomHFlip(events)
 
-            x, y = events['x'], events['y']
-
-            events['x'] = x * np.cos(angle) - y * np.sin(angle)
-            events['y'] = x * np.sin(angle) + y * np.cos(angle)
-
-            mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
-                    (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
-            for key in events.keys():
-                events[key] = events[key][mask]
-
+            
         # Normalize x y and t to [0, 128]
         events['x'] = np.floor(events['x'] / self.cfg.org_WIDTH * self.cfg.WIDTH)
         events['y'] = np.floor(events['y'] / self.cfg.org_HEIGHT * self.cfg.HEIGHT)
@@ -67,3 +54,42 @@ class EventDS(Dataset):
             'edge_index': edge_index,
             'label': label,
         }
+    
+    def RandomRotate(self, events):
+        angle = np.random.randint(-self.cfg.rotate_angle, self.cfg.rotate_angle)
+        angle = np.deg2rad(angle)
+
+        x, y = events['x'], events['y']
+
+        events['x'] = x * np.cos(angle) - y * np.sin(angle)
+        events['y'] = x * np.sin(angle) + y * np.cos(angle)
+
+        mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
+                (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
+        for key in events.keys():
+            events[key] = events[key][mask]
+
+        return events
+
+    def RandomZoom(self, events):
+        zoom = np.random.uniform(1 - self.cfg.zoom_scale, 1 + self.cfg.zoom_scale)
+        events['x'] = int(events['x'] * zoom)
+        events['y'] = int(events['y'] * zoom)
+
+        mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
+                (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
+        for key in events.keys():
+            events[key] = events[key][mask]
+
+        return events
+    
+    def RandomHFlip(self, events):
+        if np.random.rand() < self.cfg.hflip:
+            events['x'] = self.cfg.WIDTH - events['x']
+
+        mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
+                (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
+        for key in events.keys():
+            events[key] = events[key][mask]
+
+        return events
