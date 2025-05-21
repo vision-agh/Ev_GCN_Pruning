@@ -1,6 +1,7 @@
 from models.recognition import LNRecognition
 from data.mnist import MNIST
 from data.ncars import NCars
+from data.cifar import CIFAR
 
 from omegaconf import OmegaConf
 from utils.structured_pruning import structured_pruning
@@ -14,16 +15,17 @@ import pandas as pd
 
 def main():
     L.seed_everything(42, workers=True)
-    cfg = OmegaConf.load('configs/ncars.yaml')
+    cfg = OmegaConf.load('configs/cifar.yaml')
 
     if cfg.data_name == 'ncars':
         dm = NCars(cfg)
     elif cfg.data_name == 'mnist-dvs':
         dm = MNIST(cfg)
-
+    elif cfg.data_name == 'cifar10-dvs':
+        dm = CIFAR(cfg)
     dm.setup()
 
-    model = LNRecognition.load_from_checkpoint('checkpoints/ncars_3.ckpt', cfg=cfg).cuda()
+    model = LNRecognition.load_from_checkpoint(f'checkpoints/{cfg.data_name}_3.ckpt', cfg=cfg).cuda()
     model.model.eval()
 
     acc = 0
@@ -60,7 +62,7 @@ def main():
         cfg.conv5.num_bits = config['conv5_bits']
 
 
-        model = LNRecognition.load_from_checkpoint('checkpoints/mnist-dvs_3.ckpt', cfg=cfg).cuda()
+        model = LNRecognition.load_from_checkpoint(f'checkpoints/{cfg.data_name}_3.ckpt', cfg=cfg).cuda()
         model.model.eval()
         model.model.calibrate()
 
@@ -114,7 +116,7 @@ def main():
 
     # Save the results to a file
     df = pd.DataFrame(results)
-    df.to_csv('results.csv', index=False)
+    df.to_csv(f'results_{cfg.data_name}.csv', index=False)
 
 
 if __name__ == '__main__':

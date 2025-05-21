@@ -1,4 +1,4 @@
-data_dir: '/home/imperator/Datasets'
+data_dir: '/home/lsriw/Datasets'
 data_name: 'cifar10-dvs'
 
 org_WIDTH: 128
@@ -17,7 +17,7 @@ num_classes: 10
 radius: 3
 
 # Trainer
-lr: 0.001
+lr: 0.002
 weight_decay: 1e-4
 max_epochs: 100
 log_every_n_steps: 1
@@ -28,7 +28,9 @@ accumulate_grad_batches: 1
 rotate: True
 rotate_angle: 3
 
-hflip: 0.0
+hflip: 0.5
+
+dropout_rate: 0.2
 
 
 # Model

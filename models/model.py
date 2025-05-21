@@ -94,6 +94,7 @@ class MyModel(nn.Module):
         else:
             x[x < self.linear1.observer_output.zero_point] = self.linear1.observer_output.zero_point
 
+        x = torch.dropout(x, p=self.cfg.dropout_rate, train=self.training)
         x = self.linear2(x)
 
         if self.quantize_mode.item():

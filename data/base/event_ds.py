@@ -26,12 +26,10 @@ class EventDS(Dataset):
 
         if self.mode == 'train':
             # Randomly rotate the events
-            if self.cfg.rotate:
+            if self.cfg.rotate_angle != 0:
                 events = self.RandomRotate(events)
-
             events = self.RandomHFlip(events)
 
-            
         # Normalize x y and t to [0, 128]
         events['x'] = np.floor(events['x'] / self.cfg.org_WIDTH * self.cfg.WIDTH)
         events['y'] = np.floor(events['y'] / self.cfg.org_HEIGHT * self.cfg.HEIGHT)
@@ -61,11 +59,11 @@ class EventDS(Dataset):
 
         x, y = events['x'], events['y']
 
-        events['x'] = x * np.cos(angle) - y * np.sin(angle)
-        events['y'] = x * np.sin(angle) + y * np.cos(angle)
+        events['x'] = np.floor( x * np.cos(angle) - y * np.sin(angle) )
+        events['y'] = np.floor( x * np.sin(angle) + y * np.cos(angle) )
 
-        mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
-                (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
+        mask = (events['x'] >= 0) & (events['x'] < self.cfg.org_WIDTH) & \
+                (events['y'] >= 0) & (events['y'] < self.cfg.org_HEIGHT)
         for key in events.keys():
             events[key] = events[key][mask]
 
@@ -85,10 +83,10 @@ class EventDS(Dataset):
     
     def RandomHFlip(self, events):
         if np.random.rand() < self.cfg.hflip:
-            events['x'] = self.cfg.WIDTH - events['x']
+            events['x'] = np.floor(self.cfg.org_WIDTH - 1 - events['x'])
 
-        mask = (events['x'] >= 0) & (events['x'] < self.cfg.WIDTH) & \
-                (events['y'] >= 0) & (events['y'] < self.cfg.HEIGHT)
+        mask = (events['x'] >= 0) & (events['x'] < self.cfg.org_WIDTH) & \
+                (events['y'] >= 0) & (events['y'] < self.cfg.org_HEIGHT)
         for key in events.keys():
             events[key] = events[key][mask]
 
