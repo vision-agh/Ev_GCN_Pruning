@@ -2,6 +2,7 @@ from models.recognition import LNRecognition
 from data.mnist import MNIST
 from data.ncars import NCars
 from data.cifar import CIFAR
+from data.ncaltech import NCaltech
 
 from omegaconf import OmegaConf
 from utils.structured_pruning import structured_pruning
@@ -15,7 +16,7 @@ import pandas as pd
 
 def main():
     L.seed_everything(42, workers=True)
-    cfg = OmegaConf.load('configs/cifar.yaml')
+    cfg = OmegaConf.load('configs/ncaltech.yaml')
 
     if cfg.data_name == 'ncars':
         dm = NCars(cfg)
@@ -23,6 +24,8 @@ def main():
         dm = MNIST(cfg)
     elif cfg.data_name == 'cifar10-dvs':
         dm = CIFAR(cfg)
+    elif cfg.data_name == 'ncaltech101':
+        dm = NCaltech(cfg)
     dm.setup()
 
     model = LNRecognition.load_from_checkpoint(f'checkpoints/{cfg.data_name}_3.ckpt', cfg=cfg).cuda()

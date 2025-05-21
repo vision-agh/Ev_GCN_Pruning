@@ -25,8 +25,8 @@ gradient_clip_val: 0.0
 accumulate_grad_batches: 1
 
 # Augmentation
-rotate_angle: 0
-hflip: 0.5
+rotate_angle: 5
+hflip: 0.0
 
 dropout_rate: 0.0
 
