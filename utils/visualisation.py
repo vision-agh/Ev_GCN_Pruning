@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-df = pd.read_csv('results_cifar10-dvs.csv')
+df = pd.read_csv('results_ncaltech101.csv')
 
 # 1) Scatter plot: Total BRAM vs Accuracy
 plt.figure()
