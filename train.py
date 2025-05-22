@@ -50,7 +50,7 @@ def main():
                         gradient_clip_val=cfg.gradient_clip_val, 
                         accumulate_grad_batches=cfg.accumulate_grad_batches, 
                         logger=wandb_logger,
-                        callbacks=[lr_monitor],
+                        callbacks=[lr_monitor, checkpoint_callback],
                         )
     
     trainer.fit(model, dm)
