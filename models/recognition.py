@@ -38,6 +38,9 @@ class LNRecognition(L.LightningModule):
         self.pred = []
         self.target = []
 
+        self.acc = 0
+        self.itere = 0
+
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         # lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.98)
@@ -64,16 +67,31 @@ class LNRecognition(L.LightningModule):
         outputs = self.forward(data=batch)
         loss = self.criterion(outputs, batch['label'].cuda())
 
-        y_prediction = torch.argmax(outputs, dim=-1)
-        accuracy = self.accuracy(preds=y_prediction.cpu(), target=batch['label'].cpu())
+        # y_prediction = torch.argmax(outputs, dim=-1)
+        # accuracy = self.accuracy(preds=y_prediction.cpu(), target=batch['label'].cpu())
         
-        self.log('val_loss', loss, on_epoch=True, logger=True, batch_size=self.batch_size)
-        self.log('val_acc', accuracy, on_epoch=True, logger=True, batch_size=self.batch_size)
+        # self.log('val_loss', loss, on_epoch=True, logger=True, batch_size=self.batch_size)
+        # self.log('val_acc', accuracy, on_epoch=True, logger=True, batch_size=self.batch_size)
 
-        if self.num_classes > 3:
-            pred = softmax(outputs, dim=-1)
-            top_3 = self.accuracy_top_3(preds=pred, target=batch['label'])
-            self.log('val_acc_top_3', top_3, on_epoch=True, logger=True, batch_size=self.batch_size)
+        # if self.num_classes > 3:
+        #     pred = softmax(outputs, dim=-1)
+        #     top_3 = self.accuracy_top_3(preds=pred, target=batch['label'])
+        #     self.log('val_acc_top_3', top_3, on_epoch=True, logger=True, batch_size=self.batch_size)
+
+        label = batch['label'].cpu()
+        out = torch.argmax(outputs, dim=-1).cpu()
+        accuracy = (out == label).sum().item()
+        self.acc += accuracy
+        self.itere += label.size(0)
+
+    def on_validation_epoch_end(self):
+        acc = self.acc / self.itere
+        print(acc)
+        self.log('val_acc', acc, on_epoch=True)
+
+        # Reset the accuracy and iteration count for the next epoch
+        self.acc = 0
+        self.itere = 0
 
     def test_step(self, batch, batch_idx):
         outputs = self.forward(data=batch)

@@ -60,7 +60,7 @@ class NCaltech(L.LightningDataModule):
                           num_workers=self.cfg.num_workers, 
                           shuffle=False, 
                           collate_fn=self.collate_fn, 
-                          persistent_workers=False)
+                          persistent_workers=True)
     
     def collate_fn(self, data_list):
         x = torch.cat([data['x'] for data in data_list], dim=0)
