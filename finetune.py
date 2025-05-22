@@ -17,13 +17,13 @@ import torch
 import os
 
 def main():
-    cfg = OmegaConf.load('configs/cifar.yaml')
+    cfg = OmegaConf.load('configs/mnist.yaml')
 
     print(cfg)
 
     cfg.lr = cfg.lr * 0.01
 
-    dm = CIFAR(cfg)
+    dm = MNIST(cfg)
     dm.setup()
 
     cfg.conv1.num_bits = 6
@@ -32,7 +32,7 @@ def main():
     cfg.conv4.num_bits = 6
     cfg.conv5.num_bits = 6
 
-    model = LNRecognition.load_from_checkpoint('checkpoints/cifar10-dvs_3.ckpt', cfg=cfg).cuda()
+    model = LNRecognition.load_from_checkpoint('mnist-dvs_3.ckpt', cfg=cfg).cuda()
     
     model.model.calibrate()
     print(model)
@@ -114,6 +114,7 @@ def main():
     model.model.conv3.get_parameters('out/conv3.txt')
     model.model.conv4.get_parameters('out/conv4.txt')
     model.model.conv5.get_parameters('out/conv5.txt')
+    model.model.linear1.get_parameters('out/linear1.txt')
 
 if __name__ == '__main__':
     L.seed_everything(42, workers=True)

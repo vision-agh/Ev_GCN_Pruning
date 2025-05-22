@@ -153,5 +153,39 @@ class MyLinear(nn.Module):
                                         num_bits=32, 
                                         signed=True))
 
+    def get_parameters(self,
+                       file_name: str = None):
+        
+        with open(file_name, 'w') as f:
+            '''Save scales and zero points to file.'''
+            f.write(f"Input scale ({int(self.num_bits_obs)} bit):\n {int(self.qscale_in)}\n")
+            f.write(f"Input zero point:\n {int(self.observer_input.zero_point)}\n")
+            f.write(f"Weight scale ({int(self.num_bits_obs)} bit):\n {int(self.qscale_w)}\n")
+            f.write(f"Weight zero point:\n {int(self.observer_weight.zero_point)}\n")
+            f.write(f"Output scale ({int(self.num_bits_obs)} bit):\n {int(self.qscale_out)}\n")
+            f.write(f"Output zero point:\n {int(self.observer_output.zero_point)}\n")
+            f.write(f"M Scales ({int(self.num_bits_obs)} bit):\n {int(self.qscale_m)}\n")
+
+            '''Save weights and bias to file.'''
+            weight = torch.flip(self.linear.weight, [0]).T
+            weight = weight.detach().cpu().numpy().astype(np.int32).tolist()
+            
+            f.write(f"Weight ({int(self.num_bits)} bit):\n")
+            for idx, w in enumerate(weight):
+                f.write(f"weights_conv[{idx}] = {str(w).replace('[', '{').replace(']', '}') + ';'}\n")
+
+            if self.bias:
+                bias = torch.flip(self.linear.bias, [0])
+                bias = bias.detach().cpu().numpy().astype(np.int32).tolist()
+                f.write(f"\nBias ({int(self.num_bits)} bit):\n {str(bias).replace('[', '{').replace(']', '}') + ';'}\n")
+
+            '''Save LUT for POS quantization to file.'''
+            input_range = list(range(int(self.observer_input.min), int(self.observer_input.max + 1)))
+            output_range = self.observer_input.quantize_tensor(torch.tensor(input_range).to(self.linear.weight.device)) - self.observer_input.zero_point
+            output_range = output_range.detach().cpu().numpy().astype(np.int32).tolist()
+
+            f.write(f"Input range ({int(self.num_bits)} bit):\n {input_range}\n")
+            f.write(f"Output range ({int(self.num_bits)} bit):\n {output_range}\n")
+
     def __repr__(self):
         return f"{self.__class__.__name__}(input_dim={self.input_dim}, output_dim={self.output_dim}, bias={self.bias}, num_bits={self.num_bits})"
