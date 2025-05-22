@@ -7,6 +7,8 @@ from torch.nn import Sequential, Linear, BatchNorm1d
 
 from models.quantisation.observer import Observer, FakeQuantize, quantize_tensor, dequantize_tensor
 
+import numpy as np
+
 class MyPointNetConv(nn.Module):
     def __init__(
         self,
@@ -287,6 +289,50 @@ class MyPointNetConv(nn.Module):
             )
             self.qlinear.bias.copy_(quantized_bias)
     
+    def get_parameters(self,
+                       file_name: str = None):
+        
+        with open(file_name, 'w') as f:
+            '''Save scales and zero points to file.'''
+            f.write(f"Input scale ({int(self.num_bits_obs)} bit):\n {int(self.qscale_in)}\n")
+            f.write(f"Input zero point:\n {int(self.observer_input.zero_point)}\n")
+            f.write(f"Weight scale ({int(self.num_bits_obs)} bit):\n {int(self.qscale_w)}\n")
+            f.write(f"Weight zero point:\n {int(self.observer_weight.zero_point)}\n")
+            f.write(f"Output scale ({int(self.num_bits_obs)} bit):\n {int(self.qscale_out)}\n")
+            f.write(f"Output zero point:\n {int(self.observer_output.zero_point)}\n")
+            f.write(f"M Scales ({int(self.num_bits_obs)} bit):\n {int(self.qscale_m)}\n")
+
+            '''Save weights and bias to file.'''
+            bias = torch.flip(self.qlinear.bias, [0])
+            bias = bias.detach().cpu().numpy().astype(np.int32).tolist()
+            weight = torch.flip(self.qlinear.weight, [1])
+            weight = weight.detach().cpu().numpy().astype(np.int32).tolist()
+            
+            f.write(f"Weight ({int(self.num_bits)} bit):\n")
+            for idx, w in enumerate(weight):
+                f.write(f"weights_conv[{idx}] = {str(w).replace('[', '{').replace(']', '}') + ';'}\n")
+
+            f.write(f"\nBias ({int(self.num_bits)} bit):\n")
+            f.write(f"bias_conv = {str(bias).replace('[', '{').replace(']', '}') + ';'}\n")
+
+            '''Save LUT for POS quantization to file.'''
+            input_range = list(range(int(self.observer_input.min), int(self.observer_input.max + 1)))
+            output_range = self.observer_input.quantize_tensor(torch.tensor(input_range).to(self.linear.weight.device)) - self.observer_input.zero_point
+            output_range = output_range.detach().cpu().numpy().astype(np.int32).tolist()
+
+            f.write(f"Input range ({int(self.num_bits)} bit):\n {input_range}\n")
+            f.write(f"Output range ({int(self.num_bits)} bit):\n {output_range}\n")
+        
+        with open(file_name.replace('.txt', '.mem'), 'w') as f:
+            for idx, we in enumerate(weight):
+                bin_vec = [np.binary_repr(w+self.observer_weight.zero_point.to(torch.int32).item(), width=9)[1:] for w in we]
+                # Concat to bin_vec binary repr of bias
+                bin_vec = bin_vec + [np.binary_repr(bias[len(bias)-idx-1], width=32)]
+                dlugi_ciag_bitow = ''.join(bin_vec)
+                wartosc_hex = hex(int(dlugi_ciag_bitow, 2))
+                f.write(f"{str(wartosc_hex)[2:]}\n")
+
+
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}(local_nn={self.linear}, '
                 f'global_nn={self.global_nn}), num_bits={self.num_bits}')

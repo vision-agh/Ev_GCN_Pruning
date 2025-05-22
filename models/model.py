@@ -98,7 +98,7 @@ class MyModel(nn.Module):
         x = self.linear2(x)
 
         if self.quantize_mode.item():
-            x = self.linear1.observer_output.dequantize_tensor(x)
+            x = self.linear2.observer_output.dequantize_tensor(x)
         return torch.log_softmax(x, dim=-1)
     
     def calibrate(self):

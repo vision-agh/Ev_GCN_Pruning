@@ -16,7 +16,7 @@ import pandas as pd
 
 def main():
     L.seed_everything(42, workers=True)
-    cfg = OmegaConf.load('configs/ncaltech.yaml')
+    cfg = OmegaConf.load('configs/cifar.yaml')
 
     if cfg.data_name == 'ncars':
         dm = NCars(cfg)

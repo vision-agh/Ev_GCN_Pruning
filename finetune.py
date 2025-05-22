@@ -8,20 +8,22 @@ from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 
 from data.ncars import NCars
 from data.mnist import MNIST
+from data.cifar import CIFAR
 from models.recognition import LNRecognition
 
 from utils.structured_pruning import structured_pruning    
 
 import torch
+import os
 
 def main():
-    cfg = OmegaConf.load('configs/mnist.yaml')
+    cfg = OmegaConf.load('configs/cifar.yaml')
 
     print(cfg)
 
     cfg.lr = cfg.lr * 0.01
 
-    dm = MNIST(cfg)
+    dm = CIFAR(cfg)
     dm.setup()
 
     cfg.conv1.num_bits = 6
@@ -30,23 +32,23 @@ def main():
     cfg.conv4.num_bits = 6
     cfg.conv5.num_bits = 6
 
-    model = LNRecognition.load_from_checkpoint('checkpoints/mnist-dvs_3.ckpt', cfg=cfg).cuda()
+    model = LNRecognition.load_from_checkpoint('checkpoints/cifar10-dvs_3.ckpt', cfg=cfg).cuda()
     
     model.model.calibrate()
     print(model)
 
     structured_pruning(model.model.conv1, (cfg.conv1.out_channels - 18)/cfg.conv1.out_channels)
     structured_pruning(model.model.conv2, (cfg.conv2.out_channels - 36)/cfg.conv2.out_channels)
-    structured_pruning(model.model.conv3, (cfg.conv3.out_channels - 69)/cfg.conv3.out_channels)
-    structured_pruning(model.model.conv4, (cfg.conv4.out_channels - 69)/cfg.conv4.out_channels)
-    structured_pruning(model.model.conv5, (cfg.conv5.out_channels - 132)/cfg.conv5.out_channels)
+    structured_pruning(model.model.conv3, (cfg.conv3.out_channels - 66)/cfg.conv3.out_channels)
+    structured_pruning(model.model.conv4, (cfg.conv4.out_channels - 72)/cfg.conv4.out_channels)
+    structured_pruning(model.model.conv5, (cfg.conv5.out_channels - 120)/cfg.conv5.out_channels)
 
     checkpoint_callback = ModelCheckpoint(
-        monitor='val_loss',
+        monitor='val_acc',
         dirpath='checkpoints/',
-        filename=f'{cfg.data_name}_{cfg.radius}',
+        filename=f'{cfg.data_name}_{cfg.radius}_finetune',
         save_top_k=1,
-        mode='min',
+        mode='max',
     )
     
     wandb_logger = WandbLogger(project='event_recognition_pruning', 
@@ -62,7 +64,7 @@ def main():
                         callbacks=[lr_monitor, checkpoint_callback],
                         )
     
-    trainer.fit(model, dm)
+    # trainer.fit(model, dm)
 
     model.model.eval().cuda()
     acc = 0
@@ -104,9 +106,14 @@ def main():
         itere += label.size(0)
 
     print(f'Average Accuracy: {acc / itere}')
-
-
-
+    
+    # Save the model
+    os.makedirs('out', exist_ok=True)
+    model.model.conv1.get_parameters('out/conv1.txt')
+    model.model.conv2.get_parameters('out/conv2.txt')
+    model.model.conv3.get_parameters('out/conv3.txt')
+    model.model.conv4.get_parameters('out/conv4.txt')
+    model.model.conv5.get_parameters('out/conv5.txt')
 
 if __name__ == '__main__':
     L.seed_everything(42, workers=True)
