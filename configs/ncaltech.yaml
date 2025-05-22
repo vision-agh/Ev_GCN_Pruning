@@ -33,7 +33,7 @@ dropout_rate: 0.0
 # Model
 conv1:
   in_channels: 3
-  out_channels: 18
+  out_channels: 24
   num_bits: 8
   bias: False
 
@@ -41,13 +41,13 @@ pool1:
   grid: [4, 4, 4]
 
 conv2:
-  in_channels: 20
-  out_channels: 36
+  in_channels: 26
+  out_channels: 33
   num_bits: 8
   bias: False
 
 conv3:
-  in_channels: 38
+  in_channels: 35
   out_channels: 72
   num_bits: 8
   bias: False

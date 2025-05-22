@@ -41,7 +41,6 @@ def precompute_space(config, depth_start=0, depth_end=1):
                     break
 
                 # Calculate the number of BRAMs where half of the BRAM is equal to 18 bits
-                # Number of bits is equal to (new_pruned_channels * num_bits + 18)
                 num_half_bram = math.ceil( (new_pruned_channels * num_bits + 18) / 18 )
                 num_brams = num_half_bram / 2
 
