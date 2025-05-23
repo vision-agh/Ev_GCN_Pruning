@@ -32,7 +32,7 @@ def main():
     cfg.conv4.num_bits = 6
     cfg.conv5.num_bits = 6
 
-    model = LNRecognition.load_from_checkpoint('mnist-dvs_3.ckpt', cfg=cfg).cuda()
+    model = LNRecognition.load_from_checkpoint('checkpoints/mnist-dvs_3.ckpt', cfg=cfg).cuda()
     
     model.model.calibrate()
     print(model)
@@ -64,7 +64,7 @@ def main():
                         callbacks=[lr_monitor, checkpoint_callback],
                         )
     
-    # trainer.fit(model, dm)
+    trainer.fit(model, dm)
 
     model.model.eval().cuda()
     acc = 0
@@ -108,13 +108,8 @@ def main():
     print(f'Average Accuracy: {acc / itere}')
     
     # Save the model
-    os.makedirs('out', exist_ok=True)
-    model.model.conv1.get_parameters('out/conv1.txt')
-    model.model.conv2.get_parameters('out/conv2.txt')
-    model.model.conv3.get_parameters('out/conv3.txt')
-    model.model.conv4.get_parameters('out/conv4.txt')
-    model.model.conv5.get_parameters('out/conv5.txt')
-    model.model.linear1.get_parameters('out/linear1.txt')
+    os.makedirs(f'weights_{cfg.data_name}', exist_ok=True)
+    torch.save(model.model.state_dict(), f'weights_{cfg.data_name}/model.pth')
 
 if __name__ == '__main__':
     L.seed_everything(42, workers=True)

@@ -1,0 +1,81 @@
+data_dir: '/home/imperator/Datasets'
+data_name: 'mnist-dvs'
+
+org_WIDTH: 128
+org_HEIGHT: 128
+time_window: 100000
+
+WIDTH: 128
+HEIGHT: 128
+T: 128
+
+batch_size: 64
+num_workers: 8
+
+num_classes: 10
+
+radius: 3
+debug: False
+
+# Trainer
+lr: 0.001
+weight_decay: 1e-4
+max_epochs: 100
+log_every_n_steps: 1
+gradient_clip_val: 0.0
+accumulate_grad_batches: 1
+
+# Augmentation
+rotate: True
+rotate_angle: 3
+
+hflip: 0.0
+
+dropout_rate: 0.0
+
+# Model
+conv1:
+  in_channels: 3
+  out_channels: 16
+  num_bits: 8
+  bias: False
+
+pool1:
+  grid: [4, 4, 4]
+
+conv2:
+  in_channels: 18
+  out_channels: 32
+  num_bits: 8
+  bias: False
+
+conv3:
+  in_channels: 34
+  out_channels: 32
+  num_bits: 8
+  bias: False
+
+pool2:
+  grid: [2, 2, 2]
+
+conv4:
+  in_channels: 34
+  out_channels: 32
+  num_bits: 8
+  bias: False
+
+conv5:
+  in_channels: 34
+  out_channels: 32
+  num_bits: 8
+  bias: False
+
+pool_out:
+  pool_size: 4
+  max_dim: 16
+
+linear1:
+  in_features: 512
+  out_features: 10
+  num_bits: 8
+  bias: True

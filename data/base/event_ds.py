@@ -24,6 +24,8 @@ class EventDS(Dataset):
         events_file = self.files[index]
         events, label = self.reader(events_file, self.cfg)
 
+        real_events = events.copy()
+
         if self.mode == 'train':
             # Randomly rotate the events
             if self.cfg.rotate_angle != 0:
@@ -51,6 +53,7 @@ class EventDS(Dataset):
             'pos': pos,
             'edge_index': edge_index,
             'label': label,
+            'real_events': real_events,
         }
     
     def RandomRotate(self, events):

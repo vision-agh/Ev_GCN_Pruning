@@ -77,12 +77,15 @@ class MNIST(L.LightningDataModule):
         batch = torch.cat([torch.full((data['x'].shape[0],), i) for i, data in enumerate(data_list)], dim=0)
         batch = batch.long()
 
+        real_events = [data['real_events'] for data in data_list]
+
         return {
             'x': x,
             'pos': pos,
             'edge_index': edge_index,
             'batch': batch,
-            'label': label
+            'label': label,
+            'real_events': real_events
         }
     
     @staticmethod
