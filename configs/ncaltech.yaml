@@ -1,4 +1,4 @@
-data_dir: '/home/lsriw/Datasets'
+data_dir: '/home/imperator/Datasets'
 data_name: 'ncaltech101'
 
 org_WIDTH: 240

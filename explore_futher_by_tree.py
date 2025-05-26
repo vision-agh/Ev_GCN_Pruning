@@ -15,7 +15,7 @@ import pandas as pd
 def main():
     # ───────────────────────────── baseline ─────────────────────────────
     L.seed_everything(42, workers=True)
-    cfg = OmegaConf.load('configs/cifar.yaml')
+    cfg = OmegaConf.load('configs/mnist.yaml')
 
     if cfg.data_name == 'ncars':
         dm = NCars(cfg)
@@ -27,7 +27,7 @@ def main():
     dm.setup()
 
     baseline_model = LNRecognition.load_from_checkpoint(
-        'checkpoints/cifar10-dvs_3.ckpt', cfg=cfg
+        'checkpoints/mnist-dvs_3.ckpt', cfg=cfg
     ).cuda()
     baseline_model.model.eval()
 
@@ -71,7 +71,7 @@ def main():
         cfg.conv5.num_bits = c5_bits[idx[4]]
 
         model = LNRecognition.load_from_checkpoint(
-            'checkpoints/cifar10-dvs_3.ckpt', cfg=cfg
+            'checkpoints/mnist-dvs_3.ckpt', cfg=cfg
         ).cuda()
         model.model.eval()
         model.model.calibrate()
@@ -106,7 +106,7 @@ def main():
 
 
     # ───────────────────── helper: read the current configuration ─────────────────────
-    df = pd.read_csv('results_cifar10-dvs.csv')
+    df = pd.read_csv('results_mnist.csv')
 
     best_model, _ = select_best_model(df, cfg)
 

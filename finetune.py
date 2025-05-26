@@ -9,6 +9,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from data.ncars import NCars
 from data.mnist import MNIST
 from data.cifar import CIFAR
+from data.ncaltech import NCaltech
 from models.recognition import LNRecognition
 
 from utils.structured_pruning import structured_pruning    
@@ -26,7 +27,7 @@ def main():
     dm = MNIST(cfg)
     dm.setup()
 
-    cfg.conv1.num_bits = 6
+    cfg.conv1.num_bits = 8
     cfg.conv2.num_bits = 6
     cfg.conv3.num_bits = 6
     cfg.conv4.num_bits = 6
@@ -38,9 +39,9 @@ def main():
     print(model)
 
     structured_pruning(model.model.conv1, (cfg.conv1.out_channels - 18)/cfg.conv1.out_channels)
-    structured_pruning(model.model.conv2, (cfg.conv2.out_channels - 36)/cfg.conv2.out_channels)
-    structured_pruning(model.model.conv3, (cfg.conv3.out_channels - 66)/cfg.conv3.out_channels)
-    structured_pruning(model.model.conv4, (cfg.conv4.out_channels - 72)/cfg.conv4.out_channels)
+    structured_pruning(model.model.conv2, (cfg.conv2.out_channels - 33)/cfg.conv2.out_channels)
+    structured_pruning(model.model.conv3, (cfg.conv3.out_channels - 72)/cfg.conv3.out_channels)
+    structured_pruning(model.model.conv4, (cfg.conv4.out_channels - 57)/cfg.conv4.out_channels)
     structured_pruning(model.model.conv5, (cfg.conv5.out_channels - 120)/cfg.conv5.out_channels)
 
     checkpoint_callback = ModelCheckpoint(
