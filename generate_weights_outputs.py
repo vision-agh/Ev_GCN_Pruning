@@ -28,15 +28,20 @@ def main():
 
     print(model)
     
-    model.model.load_state_dict(torch.load('weights/model.pth'))
+    model.model.load_state_dict(torch.load('weights_mnist-dvs_tiny/model.pth'))
 
-    model.model.conv1.get_parameters('weights/conv1.txt')
-    model.model.conv2.get_parameters('weights/conv2.txt')
-    model.model.conv3.get_parameters('weights/conv3.txt')
-    model.model.conv4.get_parameters('weights/conv4.txt')
-    model.model.conv5.get_parameters('weights/conv5.txt')
-    model.model.linear1.get_parameters('weights/linear1.txt')
+    model.model.conv1.get_parameters('weights_mnist-dvs_tiny/conv1.txt')
+    model.model.conv2.get_parameters('weights_mnist-dvs_tiny/conv2.txt')
+    model.model.conv3.get_parameters('weights_mnist-dvs_tiny/conv3.txt')
+    model.model.conv4.get_parameters('weights_mnist-dvs_tiny/conv4.txt')
+    model.model.conv5.get_parameters('weights_mnist-dvs_tiny/conv5.txt')
 
+    # save the float weights and biases of linear layers
+    model.model.linear1.linear.weight.detach().cpu().numpy().tofile('weights_mnist-dvs_tiny/linear1_w.bin')
+    model.model.linear1.linear.bias.detach().cpu().numpy().tofile('weights_mnist-dvs_tiny/linear1_b.bin')
+    model.model.linear2.linear.weight.detach().cpu().numpy().tofile('weights_mnist-dvs_tiny/linear2_w.bin')
+    model.model.linear2.linear.bias.detach().cpu().numpy().tofile('weights_mnist-dvs_tiny/linear2_b.bin')
+    
     acc = 0
     itere = 0
 
@@ -55,6 +60,8 @@ def main():
         label = batch_data['label']
 
         out = torch.argmax(out, dim=-1)
+
+        print(label)
 
         break
 

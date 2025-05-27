@@ -86,19 +86,23 @@ class MyModel(nn.Module):
         x = self.conv5(x, pos[:,:2], edge_index)
 
         x = self.pool_out(x, pos, batch)
+        
+        if self.quantize_mode.item():
+            x = self.conv5.observer_output.dequantize_tensor(x)
 
         x = self.linear1(x)
+        x = torch.relu(x)
 
-        if not self.quantize_mode:
-            x = torch.relu(x)
-        else:
-            x[x < self.linear1.observer_output.zero_point] = self.linear1.observer_output.zero_point
+        # if not self.quantize_mode:
+        #     x = torch.relu(x)
+        # else:
+        #     x[x < self.linear1.observer_output.zero_point] = self.linear1.observer_output.zero_point
 
         x = torch.dropout(x, p=self.cfg.dropout_rate, train=self.training)
         x = self.linear2(x)
 
-        if self.quantize_mode.item():
-            x = self.linear2.observer_output.dequantize_tensor(x)
+        # if self.quantize_mode.item():
+        #     x = self.linear2.observer_output.dequantize_tensor(x)
         return torch.log_softmax(x, dim=-1)
     
     def calibrate(self):
@@ -111,8 +115,8 @@ class MyModel(nn.Module):
         self.conv4.calibrate()
         self.conv5.calibrate()
         self.pool_out.calibrate()
-        self.linear1.calibrate()
-        self.linear2.calibrate()
+        # self.linear1.calibrate()
+        # self.linear2.calibrate()
 
     def quantize(self):
         '''Quantize the model.'''
@@ -124,5 +128,5 @@ class MyModel(nn.Module):
         self.conv4.quantize(observer_input=self.conv3.observer_output)
         self.conv5.quantize(observer_input=self.conv4.observer_output)
         self.pool_out.quantize(observer_input=self.conv5.observer_output)
-        self.linear1.quantize(observer_input=self.conv5.observer_output)
-        self.linear2.quantize(observer_input=self.linear1.observer_output)
+        # self.linear1.quantize(observer_input=self.conv5.observer_output)
+        # self.linear2.quantize(observer_input=self.linear1.observer_output)

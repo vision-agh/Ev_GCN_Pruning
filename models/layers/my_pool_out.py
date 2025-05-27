@@ -56,7 +56,7 @@ class MyGraphPoolOut(Module):
         output_x = torch.zeros((max_batch, self.grid_size ** 3, x.size(1)), dtype=x.dtype, device=x.device)
 
         pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False) #TODO Change to True
-        indices_1d = uniq_qpos[:, 0] * self.grid_size ** 2 + uniq_qpos[:, 1] * self.grid_size + uniq_qpos[:, 2]
+        indices_1d = uniq_qpos[:, 2] * self.grid_size ** 2 + uniq_qpos[:, 0] * self.grid_size + uniq_qpos[:, 1]
         
         output_x[new_batch, indices_1d] = pooled_x
         output_x = output_x.flatten(start_dim=1)
@@ -79,7 +79,7 @@ class MyGraphPoolOut(Module):
         output_x = torch.zeros((max_batch, self.grid_size ** 3, x.size(1)), dtype=x.dtype, device=x.device)
 
         pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False) #TODO Change to True
-        indices_1d = uniq_qpos[:, 0] * self.grid_size ** 2 + uniq_qpos[:, 1] * self.grid_size + uniq_qpos[:, 2]
+        indices_1d = uniq_qpos[:, 2] * self.grid_size ** 2 + uniq_qpos[:, 0] * self.grid_size + uniq_qpos[:, 1]
         
         output_x[new_batch, indices_1d] = pooled_x
         output_x = output_x.flatten(start_dim=1)
@@ -114,7 +114,7 @@ class MyGraphPoolOut(Module):
         output_x = torch.zeros((max_batch, self.grid_size ** 3, x.size(1)), dtype=x.dtype, device=x.device) + self.observer_input.zero_point
 
         pooled_x = pooled_x.scatter_reduce(0, inv.unsqueeze(1).expand(-1, x.size(1)), x, reduce="amax", include_self=False)
-        indices_1d = uniq_qpos[:, 0] * self.grid_size ** 2 + uniq_qpos[:, 1] * self.grid_size + uniq_qpos[:, 2]
+        indices_1d = uniq_qpos[:, 2] * self.grid_size ** 2 + uniq_qpos[:, 0] * self.grid_size + uniq_qpos[:, 1]
         
         output_x[new_batch, indices_1d] = pooled_x
         output_x = output_x.flatten(start_dim=1)

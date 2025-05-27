@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -57,6 +58,11 @@ class MyModelTiny(nn.Module):
                                 output_dim=cfg.linear1.out_features,
                                 bias=cfg.linear1.bias,
                                 num_bits=cfg.linear1.num_bits)
+        
+        self.linear2 = MyLinear(input_dim=cfg.linear2.in_features,
+                                output_dim=cfg.linear2.out_features,
+                                bias=cfg.linear2.bias,
+                                num_bits=cfg.linear2.num_bits)
 
         # Modes for calibration and quantization
         self.register_buffer('calib_mode', torch.tensor(False, requires_grad=False))
@@ -86,12 +92,24 @@ class MyModelTiny(nn.Module):
         conv_gen_out(x, pos, edge_index, self.cfg, 'outputs/conv4_out.txt')
         x = self.conv5(x, pos[:,:2], edge_index)
         conv_gen_out(x, pos, edge_index, self.cfg, 'outputs/conv5_out.txt')
+
         x = self.pool_out(x, pos, batch)
+
+        np.savetxt('outputs/pool_out_2d.txt', x.detach().cpu().numpy().reshape(-1), fmt='%s')
+
+        if self.quantize_mode.item():
+            x = self.conv5.observer_output.dequantize_tensor(x)
+
+        np.savetxt('outputs/dequant.txt', x.detach().cpu().numpy().reshape(-1))
 
         x = self.linear1(x)
 
-        if self.quantize_mode.item():
-            x = self.linear1.observer_output.dequantize_tensor(x)
+        np.savetxt('outputs/linea1.txt', x.detach().cpu().numpy().reshape(-1))
+
+        x = torch.relu(x)
+        x = torch.dropout(x, p=self.cfg.dropout_rate, train=self.training)
+        x = self.linear2(x)
+        np.savetxt('outputs/linea2.txt', x.detach().cpu().numpy().reshape(-1))
         return torch.log_softmax(x, dim=-1)
     
     def calibrate(self):
@@ -104,7 +122,6 @@ class MyModelTiny(nn.Module):
         self.conv4.calibrate()
         self.conv5.calibrate()
         self.pool_out.calibrate()
-        self.linear1.calibrate()
 
     def quantize(self):
         '''Quantize the model.'''
@@ -116,4 +133,3 @@ class MyModelTiny(nn.Module):
         self.conv4.quantize(observer_input=self.conv3.observer_output)
         self.conv5.quantize(observer_input=self.conv4.observer_output)
         self.pool_out.quantize(observer_input=self.conv5.observer_output)
-        self.linear1.quantize(observer_input=self.conv5.observer_output)

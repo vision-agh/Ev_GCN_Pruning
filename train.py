@@ -14,7 +14,7 @@ from models.recognition import LNRecognition
 
 
 def main():
-    cfg = OmegaConf.load('configs/ncaltech.yaml')
+    cfg = OmegaConf.load('configs/mnist_tiny.yaml')
 
     print(cfg)
 

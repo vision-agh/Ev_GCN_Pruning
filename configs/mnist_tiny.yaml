@@ -76,6 +76,12 @@ pool_out:
 
 linear1:
   in_features: 512
+  out_features: 1024
+  num_bits: 8
+  bias: True
+
+linear2:
+  in_features: 1024
   out_features: 10
   num_bits: 8
   bias: True
