@@ -125,3 +125,18 @@ Edit the YAML files in `configs/` to change:
 - Layer widths, quantization bit-widths, graph radii
 - Training hyperparameters (learning rate, epochs, batch size)
 - Data augmentation (rotation, horizontal flip)
+
+If you find the resources usefull, please cite the paper:
+
+```
+@INPROCEEDINGS{11215154,
+  author={Wzorek, Piotr and Jeziorek, Kamil and Kryjak, Tomasz},
+  booktitle={2025 Signal Processing: Algorithms, Architectures, Arrangements, and Applications (SPA)}, 
+  title={Hardware-aware Graph Neural Networks prunning for embedded event-based vision}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={182-187},
+  keywords={Adaptation models;Accuracy;Quantization (signal);Event detection;Search methods;Robot vision systems;Signal processing algorithms;Cameras;System-on-chip;Field programmable gate arrays;SoC FPGA;Graph Convolutional Nerual Networks;Event Cameras;Prunning;Quantization},
+  doi={10.23919/SPA65537.2025.11215154}}
+```
